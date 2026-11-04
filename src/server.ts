@@ -248,6 +248,8 @@ If the user asks to schedule a task, use the schedule tool to schedule the task.
   }
 }
 
+export class SandboxAgent extends ChatAgent {}
+
 export default {
   async fetch(request: Request, env: Env) {
     return (
