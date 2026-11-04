@@ -282,7 +282,7 @@ function Chat() {
   const mcpPanelRef = useRef<HTMLDivElement>(null);
 
   const agent = useAgent<ChatAgent>({
-    agent: "ChatAgent",
+    agent: "SandboxAgent",
     onOpen: useCallback(() => setConnected(true), []),
     onClose: useCallback(() => setConnected(false), []),
     onError: useCallback(
