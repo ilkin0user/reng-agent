@@ -24,4 +24,10 @@
       "tag": "v1"
     }
   ]
+ "containers": [
+      {
+        "class_name": "ChatAgent",
+        "scheduling_policy": "durable_object"
+      }
+    ],
 }
