@@ -11,6 +11,9 @@ import {
 } from "ai";
 import { z } from "zod";
 
+const MAX_OUTPUT_CHARS = 10_000;
+const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
+
 export class ChatAgent extends AIChatAgent<Env> {
   maxPersistedMessages = 100;
   chatRecovery = true;
@@ -45,6 +48,38 @@ export class ChatAgent extends AIChatAgent<Env> {
   async removeServer(serverId: string) {
     await this.removeMcpServer(serverId);
   }
+     private async runCommand(command: string) {
+      const container = this.ctx.container;
+      if (!container) {
+        throw new Error("No container is configured");
+      }
+
+      if (!container.running) {
+        container.start({
+          image: "cloudflare/debian-trixie",
+          entrypoint: ["sleep", "infinity"],
+          enableInternet: false
+        });
+      }
+      await container.setInactivityTimeout(INACTIVITY_TIMEOUT_MS);
+
+      const process = await container.exec([
+        "timeout",
+        "--kill-after=5",
+        "60",
+        "bash",
+        "-lc",
+        command
+      ]);
+      const output = await process.output();
+      const decoder = new TextDecoder();
+
+      return {
+        exitCode: output.exitCode,
+        stdout: decoder.decode(output.stdout).slice(-MAX_OUTPUT_CHARS),
+        stderr: decoder.decode(output.stderr).slice(-MAX_OUTPUT_CHARS)
+      };
+    }
 
   async onChatMessage(_onFinish: unknown, options?: OnChatMessageOptions) {
     const mcpTools = this.mcp.getAITools();
@@ -68,6 +103,15 @@ If the user asks to schedule a task, use the schedule tool to schedule the task.
       tools: {
         // MCP tools from connected servers
         ...mcpTools,
+
+          run_command: tool({
+            description:
+              "Run a shell command in this agent's Debian Linux sandbox with Node.js. The sandbox cannot reach the Internet, so npm install does not work; use node --test. Files last only while the sandbox runs. Report only results you actually got from this tool.",
+            inputSchema: z.object({
+              command: z.string().describe("The command to run with bash -lc")
+            }),
+            execute: ({ command }) => this.runCommand(command)
+          }),
 
         // Server-side tool: runs automatically on the server
         getWeather: tool({
