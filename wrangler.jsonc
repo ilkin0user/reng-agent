@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "reng-agent",
   "main": "src/server.ts",
-  "compatibility_date": "2026-06-11",
+  "compatibility_date": "2026-11-04",
   "compatibility_flags": ["nodejs_compat"],
   "ai": { "binding": "AI", "remote": true },
   "assets": {
